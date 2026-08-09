@@ -17,7 +17,10 @@ export default async function DashboardPage() {
   let candidates: Awaited<ReturnType<typeof api.listCandidates>> = [];
   let sessions: Awaited<ReturnType<typeof api.listSessions>> = [];
   try {
-    [candidates, sessions] = await Promise.all([api.listCandidates(), api.listSessions()]);
+    [candidates, sessions] = await Promise.all([
+      api.listCandidates(),
+      api.listSessions(),
+    ]);
   } catch {
     // Backend may be offline; the cards below will show zeros and a hint.
   }
@@ -29,7 +32,10 @@ export default async function DashboardPage() {
       <div className="space-y-2">
         <h1
           className="text-4xl font-bold tracking-tight text-[#e8e8ff]"
-          style={{ textShadow: "0 0 20px rgba(0,229,255,0.5), 0 0 50px rgba(0,229,255,0.2)" }}
+          style={{
+            textShadow:
+              "0 0 20px rgba(0,229,255,0.5), 0 0 50px rgba(0,229,255,0.2)",
+          }}
         >
           Dashboard
         </h1>
@@ -44,7 +50,9 @@ export default async function DashboardPage() {
       <div className="grid gap-6 sm:grid-cols-3">
         <Card className="group hover:shadow-neon-cyan hover:border-[rgba(0,229,255,0.25)] transition-all duration-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-[#7a7aaa]">Candidates</CardTitle>
+            <CardTitle className="text-sm font-medium text-[#7a7aaa]">
+              Candidates
+            </CardTitle>
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[rgba(0,229,255,0.08)] transition-all duration-300 group-hover:bg-[rgba(0,229,255,0.15)]">
               <Users className="h-4 w-4 text-neon-cyan" />
             </div>
@@ -62,7 +70,9 @@ export default async function DashboardPage() {
 
         <Card className="group hover:shadow-neon-magenta hover:border-[rgba(255,0,229,0.25)] transition-all duration-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-[#7a7aaa]">Sessions</CardTitle>
+            <CardTitle className="text-sm font-medium text-[#7a7aaa]">
+              Sessions
+            </CardTitle>
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[rgba(255,0,229,0.08)] transition-all duration-300 group-hover:bg-[rgba(255,0,229,0.15)]">
               <CalendarClock className="h-4 w-4 text-neon-magenta" />
             </div>
@@ -80,7 +90,9 @@ export default async function DashboardPage() {
 
         <Card className="group hover:shadow-neon-green hover:border-[rgba(57,255,20,0.25)] transition-all duration-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-[#7a7aaa]">Completed</CardTitle>
+            <CardTitle className="text-sm font-medium text-[#7a7aaa]">
+              Completed
+            </CardTitle>
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[rgba(57,255,20,0.08)] transition-all duration-300 group-hover:bg-[rgba(57,255,20,0.15)]">
               <Bot className="h-4 w-4 text-neon-green" />
             </div>
@@ -100,9 +112,7 @@ export default async function DashboardPage() {
       <Card className="neon-border overflow-hidden">
         <CardHeader>
           <CardTitle className="text-neon-cyan">Get started</CardTitle>
-          <CardDescription>
-            Make sure the FastAPI backend is running on http://localhost:8000 to see live data.
-          </CardDescription>
+          
         </CardHeader>
         <CardContent className="flex flex-wrap gap-3">
           <Button asChild>
