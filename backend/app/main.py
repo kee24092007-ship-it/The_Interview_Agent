@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 
 from app.config import get_settings
 from app.database import init_db
-from app.routers import answers, candidates, evaluations, questions, sessions
+from app.routers import answers, candidates, evaluations, interview, questions, sessions
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -48,6 +48,7 @@ app.include_router(sessions.router)
 app.include_router(questions.router)
 app.include_router(answers.router)
 app.include_router(evaluations.router)
+app.include_router(interview.router)
 
 
 @app.exception_handler(Exception)

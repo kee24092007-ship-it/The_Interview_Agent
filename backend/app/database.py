@@ -37,6 +37,6 @@ def get_db() -> Generator[Session, None, None]:
 def init_db() -> None:
     """Create all tables defined in the models package."""
     # Importing the models module registers the tables on Base.metadata.
-    from app.models import candidate, session as session_model, question, answer, evaluation  # noqa: F401
+    from app.models import answer, candidate, evaluation, interview_flow, question, session as session_model  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
