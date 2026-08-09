@@ -51,12 +51,16 @@ export interface Evaluation {
 
 const API_BASE =
   typeof window === "undefined"
-    ? (process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:8000")
+    ? (process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ??
+      "http://localhost:8000")
     : "/api";
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...(options?.headers ?? {}) },
+    headers: {
+      "Content-Type": "application/json",
+      ...(options?.headers ?? {}),
+    },
     ...options,
   });
   if (!res.ok) {
@@ -67,7 +71,9 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     } catch {
       // ignore non-JSON error bodies
     }
-    throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
+    throw new Error(
+      typeof detail === "string" ? detail : JSON.stringify(detail),
+    );
   }
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
@@ -75,25 +81,42 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
 export const api = {
   // Candidates
-  listCandidates: () => request<Candidate[]>("/candidates"),
+  listCandidates: (params?: { limit?: number; offset?: number }) =>
+    request<Candidate[]>(
+      `/candidates${params ? `?limit=${params.limit ?? 50}&offset=${params.offset ?? 0}` : ""}`,
+    ),
   getCandidate: (id: number) => request<Candidate>(`/candidates/${id}`),
   createCandidate: (data: Partial<Candidate>) =>
-    request<Candidate>("/candidates", { method: "POST", body: JSON.stringify(data) }),
+    request<Candidate>("/candidates", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
   updateCandidate: (id: number, data: Partial<Candidate>) =>
-    request<Candidate>(`/candidates/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
-  deleteCandidate: (id: number) => request<void>(`/candidates/${id}`, { method: "DELETE" }),
+    request<Candidate>(`/candidates/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+  deleteCandidate: (id: number) =>
+    request<void>(`/candidates/${id}`, { method: "DELETE" }),
 
   // Sessions
-  listSessions: () => request<InterviewSession[]>("/sessions"),
+  listSessions: (params?: { limit?: number; offset?: number }) =>
+    request<InterviewSession[]>(
+      `/sessions${params ? `?limit=${params.limit ?? 50}&offset=${params.offset ?? 0}` : ""}`,
+    ),
   getSession: (id: number) => request<InterviewSession>(`/sessions/${id}`),
   createSession: (data: Partial<InterviewSession>) =>
-    request<InterviewSession>("/sessions", { method: "POST", body: JSON.stringify(data) }),
+    request<InterviewSession>("/sessions", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
   updateSession: (id: number, data: Partial<InterviewSession>) =>
     request<InterviewSession>(`/sessions/${id}`, {
       method: "PATCH",
       body: JSON.stringify(data),
     }),
-  startSession: (id: number) => request<InterviewSession>(`/sessions/${id}/start`, { method: "POST" }),
+  startSession: (id: number) =>
+    request<InterviewSession>(`/sessions/${id}/start`, { method: "POST" }),
   completeSession: (id: number) =>
     request<InterviewSession>(`/sessions/${id}/complete`, { method: "POST" }),
   generateQuestions: (
@@ -103,7 +126,7 @@ export const api = {
       job_description?: string | null;
       candidate_skills?: string | null;
       count?: number;
-    }
+    },
   ) =>
     request<Question[]>(`/sessions/${id}/questions/generate`, {
       method: "POST",
@@ -111,5 +134,11 @@ export const api = {
     }),
 
   // Questions
-  listQuestionsForSession: (id: number) => request<Question[]>(`/questions/session/${id}`),
+  listQuestionsForSession: (
+    id: number,
+    params?: { limit?: number; offset?: number },
+  ) =>
+    request<Question[]>(
+      `/questions/session/${id}${params ? `?limit=${params.limit ?? 50}&offset=${params.offset ?? 0}` : ""}`,
+    ),
 };

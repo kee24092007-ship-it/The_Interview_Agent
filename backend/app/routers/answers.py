@@ -1,7 +1,7 @@
 """CRUD routes for answers, including AI-powered evaluation on submit."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -35,8 +35,15 @@ def submit_answer(payload: AnswerCreate, db: Session = Depends(get_db)) -> Answe
 
 
 @router.get("/session/{session_id}", response_model=list[AnswerRead])
-def list_answers_for_session(session_id: int, db: Session = Depends(get_db)) -> list[Answer]:
-    return list(db.scalars(select(Answer).where(Answer.session_id == session_id)).all())
+def list_answers_for_session(
+    session_id: int,
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+) -> list[Answer]:
+    return list(
+        db.scalars(select(Answer).where(Answer.session_id == session_id).limit(limit).offset(offset)).all()
+    )
 
 
 @router.get("/{answer_id}", response_model=AnswerRead)

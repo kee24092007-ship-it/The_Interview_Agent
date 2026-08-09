@@ -15,7 +15,10 @@ import { api } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
-const statusVariant: Record<string, "secondary" | "success" | "warning" | "destructive"> = {
+const statusVariant: Record<
+  string,
+  "secondary" | "success" | "warning" | "destructive"
+> = {
   scheduled: "secondary",
   in_progress: "warning",
   completed: "success",
@@ -26,7 +29,7 @@ export default async function SessionsPage() {
   let sessions: InterviewSession[] = [];
   let error: string | null = null;
   try {
-    sessions = await api.listSessions();
+    sessions = await api.listSessions({ limit: 50, offset: 0 });
   } catch (e) {
     error = e instanceof Error ? e.message : "Unable to load sessions.";
   }
@@ -35,8 +38,12 @@ export default async function SessionsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Interview Sessions</h1>
-          <p className="text-muted-foreground">Scheduled and completed AI interviews.</p>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Interview Sessions
+          </h1>
+          <p className="text-muted-foreground">
+            Scheduled and completed AI interviews.
+          </p>
         </div>
         <Button asChild>
           <Link href="/sessions/new">
@@ -47,7 +54,9 @@ export default async function SessionsPage() {
 
       {error && (
         <Card>
-          <CardContent className="py-6 text-sm text-destructive">{error}</CardContent>
+          <CardContent className="py-6 text-sm text-destructive">
+            {error}
+          </CardContent>
         </Card>
       )}
 
@@ -67,7 +76,9 @@ export default async function SessionsPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <CardTitle>{session.job_title}</CardTitle>
-                    <CardDescription>Candidate #{session.candidate_id}</CardDescription>
+                    <CardDescription>
+                      Candidate #{session.candidate_id}
+                    </CardDescription>
                   </div>
                   <Badge variant={statusVariant[session.status] ?? "secondary"}>
                     {session.status.replace("_", " ")}

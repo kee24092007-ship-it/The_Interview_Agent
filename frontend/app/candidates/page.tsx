@@ -25,7 +25,7 @@ export default async function CandidatesPage() {
   let candidates: Candidate[] = [];
   let error: string | null = null;
   try {
-    candidates = await api.listCandidates();
+    candidates = await api.listCandidates({ limit: 50, offset: 0 });
   } catch (e) {
     error = e instanceof Error ? e.message : "Unable to load candidates.";
   }
@@ -36,7 +36,10 @@ export default async function CandidatesPage() {
         <div>
           <h1
             className="text-3xl font-bold tracking-tight text-[#e8e8ff]"
-            style={{ textShadow: "0 0 20px rgba(0,229,255,0.5), 0 0 50px rgba(0,229,255,0.2)" }}
+            style={{
+              textShadow:
+                "0 0 20px rgba(0,229,255,0.5), 0 0 50px rgba(0,229,255,0.2)",
+            }}
           >
             Candidates
           </h1>
@@ -53,7 +56,9 @@ export default async function CandidatesPage() {
 
       {error && (
         <Card className="border-neon-red/30">
-          <CardContent className="py-6 text-sm text-neon-red">{error}</CardContent>
+          <CardContent className="py-6 text-sm text-neon-red">
+            {error}
+          </CardContent>
         </Card>
       )}
 
@@ -67,15 +72,26 @@ export default async function CandidatesPage() {
 
       <div className="grid gap-4 md:grid-cols-2">
         {candidates.map((candidate) => (
-          <Card key={candidate.id} className="group hover:shadow-neon-cyan-sm hover:border-[rgba(0,229,255,0.2)] transition-all duration-300">
+          <Card
+            key={candidate.id}
+            className="group hover:shadow-neon-cyan-sm hover:border-[rgba(0,229,255,0.2)] transition-all duration-300"
+          >
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div>
-                  <CardTitle className="group-hover:text-neon-cyan transition-colors duration-300">{candidate.full_name}</CardTitle>
+                  <CardTitle className="group-hover:text-neon-cyan transition-colors duration-300">
+                    {candidate.full_name}
+                  </CardTitle>
                   <CardDescription>{candidate.email}</CardDescription>
                 </div>
                 <form action={deleteCandidate.bind(null, candidate.id)}>
-                  <Button type="submit" variant="ghost" size="icon" aria-label="Delete candidate" className="hover:bg-[rgba(255,23,68,0.1)] hover:text-neon-red">
+                  <Button
+                    type="submit"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Delete candidate"
+                    className="hover:bg-[rgba(255,23,68,0.1)] hover:text-neon-red"
+                  >
                     <Trash2 className="h-4 w-4 text-neon-red/60 hover:text-neon-red transition-colors" />
                   </Button>
                 </form>
@@ -83,16 +99,23 @@ export default async function CandidatesPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary">{candidate.years_of_experience ?? 0} yrs exp</Badge>
+                <Badge variant="secondary">
+                  {candidate.years_of_experience ?? 0} yrs exp
+                </Badge>
                 {candidate.skills &&
-                  candidate.skills.split(",").slice(0, 4).map((skill) => (
-                    <Badge key={skill.trim()} variant="outline">
-                      {skill.trim()}
-                    </Badge>
-                  ))}
+                  candidate.skills
+                    .split(",")
+                    .slice(0, 4)
+                    .map((skill) => (
+                      <Badge key={skill.trim()} variant="outline">
+                        {skill.trim()}
+                      </Badge>
+                    ))}
               </div>
               {candidate.resume_text && (
-                <p className="line-clamp-2 text-sm text-[#7a7aaa]">{candidate.resume_text}</p>
+                <p className="line-clamp-2 text-sm text-[#7a7aaa]">
+                  {candidate.resume_text}
+                </p>
               )}
             </CardContent>
           </Card>

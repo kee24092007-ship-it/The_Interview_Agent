@@ -1,7 +1,7 @@
 """CRUD routes for evaluations."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -25,8 +25,15 @@ def create_evaluation(payload: EvaluationCreate, db: Session = Depends(get_db)) 
 
 
 @router.get("/session/{session_id}", response_model=list[EvaluationRead])
-def list_evaluations_for_session(session_id: int, db: Session = Depends(get_db)) -> list[Evaluation]:
-    return list(db.scalars(select(Evaluation).where(Evaluation.session_id == session_id)).all())
+def list_evaluations_for_session(
+    session_id: int,
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+) -> list[Evaluation]:
+    return list(
+        db.scalars(select(Evaluation).where(Evaluation.session_id == session_id).limit(limit).offset(offset)).all()
+    )
 
 
 @router.get("/{evaluation_id}", response_model=EvaluationRead)

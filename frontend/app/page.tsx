@@ -16,13 +16,21 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   let candidates: Awaited<ReturnType<typeof api.listCandidates>> = [];
   let sessions: Awaited<ReturnType<typeof api.listSessions>> = [];
+  let candidateLoadError: string | null = null;
+  let sessionLoadError: string | null = null;
+
   try {
-    [candidates, sessions] = await Promise.all([
-      api.listCandidates(),
-      api.listSessions(),
-    ]);
-  } catch {
-    // Backend may be offline; the cards below will show zeros and a hint.
+    candidates = await api.listCandidates({ limit: 50, offset: 0 });
+  } catch (e) {
+    candidateLoadError =
+      e instanceof Error ? e.message : "Unable to load candidates.";
+  }
+
+  try {
+    sessions = await api.listSessions({ limit: 50, offset: 0 });
+  } catch (e) {
+    sessionLoadError =
+      e instanceof Error ? e.message : "Unable to load sessions.";
   }
 
   const completed = sessions.filter((s) => s.status === "completed").length;
@@ -112,7 +120,6 @@ export default async function DashboardPage() {
       <Card className="neon-border overflow-hidden">
         <CardHeader>
           <CardTitle className="text-neon-cyan">Get started</CardTitle>
-          
         </CardHeader>
         <CardContent className="flex flex-wrap gap-3">
           <Button asChild>
@@ -125,6 +132,17 @@ export default async function DashboardPage() {
           </Button>
         </CardContent>
       </Card>
+
+      {(candidateLoadError || sessionLoadError) && (
+        <Card>
+          <CardContent className="py-4 text-sm text-[#ff6b6b]">
+            {candidateLoadError && (
+              <p>Candidate load error: {candidateLoadError}</p>
+            )}
+            {sessionLoadError && <p>Session load error: {sessionLoadError}</p>}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

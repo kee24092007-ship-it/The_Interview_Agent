@@ -1,7 +1,7 @@
 """CRUD routes for candidates."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -25,8 +25,19 @@ def create_candidate(payload: CandidateCreate, db: Session = Depends(get_db)) ->
 
 
 @router.get("", response_model=list[CandidateRead])
-def list_candidates(db: Session = Depends(get_db)) -> list[Candidate]:
-    return list(db.scalars(select(Candidate).order_by(Candidate.created_at.desc())).all())
+def list_candidates(
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+) -> list[Candidate]:
+    return list(
+        db.scalars(
+            select(Candidate)
+            .order_by(Candidate.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        ).all()
+    )
 
 
 @router.get("/{candidate_id}", response_model=CandidateRead)

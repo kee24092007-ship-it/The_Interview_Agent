@@ -1,7 +1,7 @@
 """CRUD routes for questions within a session."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -25,9 +25,20 @@ def create_question(payload: QuestionCreate, db: Session = Depends(get_db)) -> Q
 
 
 @router.get("/session/{session_id}", response_model=list[QuestionRead])
-def list_questions_for_session(session_id: int, db: Session = Depends(get_db)) -> list[Question]:
+def list_questions_for_session(
+    session_id: int,
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+) -> list[Question]:
     return list(
-        db.scalars(select(Question).where(Question.session_id == session_id).order_by(Question.order)).all()
+        db.scalars(
+            select(Question)
+            .where(Question.session_id == session_id)
+            .order_by(Question.order)
+            .limit(limit)
+            .offset(offset)
+        ).all()
     )
 
 

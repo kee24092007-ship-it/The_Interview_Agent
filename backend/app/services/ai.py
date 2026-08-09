@@ -9,16 +9,29 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from typing import Any
 
-from openai import OpenAI
+import httpx
+from openai import OpenAI, OpenAIError
 
 from app.config import get_settings
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
+_http_client: httpx.Client | None = None
 _client: OpenAI | None = None
+
+
+def _get_http_client() -> httpx.Client:
+    global _http_client
+    if _http_client is None:
+        _http_client = httpx.Client(
+            timeout=httpx.Timeout(10.0, read=60.0),
+            limits=httpx.Limits(max_keepalive_connections=10, max_connections=20),
+        )
+    return _http_client
 
 
 def _get_client() -> OpenAI | None:
@@ -27,8 +40,31 @@ def _get_client() -> OpenAI | None:
     if not settings.openai_api_key:
         return None
     if _client is None:
-        _client = OpenAI(api_key=settings.openai_api_key, max_retries=0)
+        _client = OpenAI(
+            api_key=settings.openai_api_key,
+            httpx_client=_get_http_client(),
+            max_retries=3,
+        )
     return _client
+
+
+def _call_with_retry(callable_: callable, *args: Any, retries: int = 3, initial_delay: float = 1.0, **kwargs: Any) -> Any:
+    delay = initial_delay
+    for attempt in range(1, retries + 1):
+        try:
+            return callable_(*args, **kwargs)
+        except (OpenAIError, httpx.HTTPError) as exc:
+            if attempt >= retries:
+                raise
+            logger.warning(
+                "AI request failed (attempt %d/%d): %s; retrying in %.1fs",
+                attempt,
+                retries,
+                exc,
+                delay,
+            )
+            time.sleep(delay)
+            delay = min(delay * 2, 10.0)
 
 
 def _json_extract(text: str) -> list[dict[str, Any]]:
@@ -114,7 +150,8 @@ def generate_questions(
         'situational, strengths, custom), "difficulty" (easy, medium, hard), "order" (int).'
     )
     try:
-        response = client.chat.completions.create(
+        response = _call_with_retry(
+            client.chat.completions.create,
             model=settings.openai_model,
             messages=[
                 {"role": "system", "content": "You generate interview questions as JSON only."},
@@ -173,7 +210,8 @@ def evaluate_answer(question: str, answer_text: str) -> dict[str, Any]:
         f"Question: {question}\nAnswer: {answer_text}"
     )
     try:
-        response = client.chat.completions.create(
+        response = _call_with_retry(
+            client.chat.completions.create,
             model=settings.openai_model,
             messages=[
                 {"role": "system", "content": "You evaluate interview answers and return JSON only."},

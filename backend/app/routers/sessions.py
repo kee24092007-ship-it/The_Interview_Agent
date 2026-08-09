@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -30,8 +30,19 @@ def create_session(payload: SessionCreate, db: Session = Depends(get_db)) -> Int
 
 
 @router.get("", response_model=list[SessionRead])
-def list_sessions(db: Session = Depends(get_db)) -> list[InterviewSession]:
-    return list(db.scalars(select(InterviewSession).order_by(InterviewSession.created_at.desc())).all())
+def list_sessions(
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+) -> list[InterviewSession]:
+    return list(
+        db.scalars(
+            select(InterviewSession)
+            .order_by(InterviewSession.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        ).all()
+    )
 
 
 @router.get("/{session_id}", response_model=SessionRead)
@@ -117,6 +128,4 @@ def generate_session_questions(
         db.add(question)
         created.append(question)
     db.commit()
-    for question in created:
-        db.refresh(question)
     return created
