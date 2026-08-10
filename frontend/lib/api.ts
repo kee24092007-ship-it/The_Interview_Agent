@@ -1,6 +1,7 @@
 /**
  * Lightweight API client for the FastAPI backend.
- * Uses the NEXT_PUBLIC_API_URL env var if present, otherwise localhost:8000.
+ * Browser requests use the Next.js /api proxy; server-side requests use the
+ * deployed backend directly because Node's fetch does not accept relative URLs.
  */
 
 export interface Candidate {
@@ -49,7 +50,10 @@ export interface Evaluation {
   created_at: string;
 }
 
-const API_BASE = "/api";
+const API_BASE =
+  typeof window === "undefined"
+    ? process.env.NEXT_PUBLIC_API_URL || "https://the-interview-agent-dxin.onrender.com"
+    : "/api";
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
