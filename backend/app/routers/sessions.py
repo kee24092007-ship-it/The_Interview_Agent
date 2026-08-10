@@ -18,6 +18,60 @@ from app.services import ai
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 
 
+_FALLBACK_QUESTIONS = [
+    ("Explain the most important technical concept you would use in this role.", "technical", "medium"),
+    ("Walk me through a project you built and the engineering decisions you made.", "technical", "medium"),
+    ("How would you debug an API that works locally but fails in production?", "situational", "hard"),
+    ("How would you design a reliable API between a frontend and backend?", "technical", "medium"),
+    ("Describe a difficult technical problem and how you approached solving it.", "behavioral", "medium"),
+    ("How would you test a new feature before deploying it to production?", "technical", "medium"),
+    ("What trade-offs would you consider when choosing an AI model for a production system?", "technical", "hard"),
+    ("How would you monitor and improve an AI application after deployment?", "technical", "hard"),
+]
+
+
+def _safe_generated_questions(generated: object, count: int) -> list[dict[str, object]]:
+    """Normalize AI output so invalid model JSON can never break the API response."""
+    allowed_types = {"behavioral", "technical", "coding", "situational", "strengths", "custom"}
+    allowed_difficulties = {"easy", "medium", "hard"}
+    safe: list[dict[str, object]] = []
+
+    if isinstance(generated, list):
+        for item in generated:
+            if not isinstance(item, dict):
+                continue
+            content = item.get("content")
+            if not isinstance(content, str) or not content.strip():
+                continue
+            qtype = item.get("question_type")
+            difficulty = item.get("difficulty")
+            safe.append(
+                {
+                    "content": content.strip(),
+                    "question_type": qtype if qtype in allowed_types else "technical",
+                    "difficulty": difficulty if difficulty in allowed_difficulties else "medium",
+                    "order": len(safe),
+                }
+            )
+            if len(safe) >= count:
+                return safe
+
+    # Always return the requested number even if the AI returned malformed or
+    # incomplete JSON. This keeps the Question Bank usable without an AI outage.
+    for content, qtype, difficulty in _FALLBACK_QUESTIONS:
+        if len(safe) >= count:
+            break
+        safe.append(
+            {
+                "content": content,
+                "question_type": qtype,
+                "difficulty": difficulty,
+                "order": len(safe),
+            }
+        )
+    return safe[:count]
+
+
 @router.post("", response_model=SessionRead, status_code=status.HTTP_201_CREATED)
 def create_session(payload: SessionCreate, db: Session = Depends(get_db)) -> InterviewSession:
     if db.get(Candidate, payload.candidate_id) is None:
@@ -104,28 +158,43 @@ def generate_session_questions(
     payload: QuestionGenerateRequest,
     db: Session = Depends(get_db),
 ) -> list[Question]:
-    """Use the AI to generate questions and persist them to the session."""
+    """Generate and persist a valid question set, with a safe local fallback."""
     session = db.get(InterviewSession, session_id)
     if session is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found.")
 
-    generated = ai.generate_questions(
-        job_title=payload.job_title or session.job_title,
-        job_description=payload.job_description or session.job_description,
-        candidate_skills=payload.candidate_skills,
-        count=payload.count,
-        question_types=[t.value for t in payload.question_types],
-    )
+    try:
+        generated = ai.generate_questions(
+            job_title=payload.job_title or session.job_title,
+            job_description=payload.job_description or session.job_description,
+            candidate_skills=payload.candidate_skills,
+            count=payload.count,
+            question_types=[t.value for t in payload.question_types],
+        )
+    except Exception:
+        # The AI service is expected to fall back itself, but keep this route
+        # resilient if a provider/client initialization error escapes it.
+        generated = []
+
+    safe_questions = _safe_generated_questions(generated, payload.count)
     created: list[Question] = []
-    for item in generated:
+    for item in safe_questions:
         question = Question(
             session_id=session.id,
-            content=item["content"],
-            question_type=item.get("question_type", "behavioral"),
-            difficulty=item.get("difficulty", "medium"),
-            order=item.get("order", len(created)),
+            content=str(item["content"]),
+            question_type=str(item["question_type"]),
+            difficulty=str(item["difficulty"]),
+            order=int(item["order"]),
         )
         db.add(question)
         created.append(question)
-    db.commit()
+
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+    for question in created:
+        db.refresh(question)
     return created
