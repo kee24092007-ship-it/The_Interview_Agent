@@ -31,6 +31,7 @@ class SessionRead(SessionBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    candidate_id: int | None
     started_at: datetime | None
     ended_at: datetime | None
     created_at: datetime

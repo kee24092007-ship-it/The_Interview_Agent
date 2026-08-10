@@ -7,6 +7,8 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.candidate import Candidate
+from app.models.question import Question
+from app.models.session import InterviewSession
 from app.schemas.candidate import CandidateCreate, CandidateRead, CandidateUpdate
 
 router = APIRouter(prefix="/candidates", tags=["candidates"])
@@ -65,5 +67,8 @@ def delete_candidate(candidate_id: int, db: Session = Depends(get_db)) -> None:
     candidate = db.get(Candidate, candidate_id)
     if candidate is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Candidate not found.")
+    sessions = db.scalars(select(InterviewSession).where(InterviewSession.candidate_id == candidate_id)).all()
+    for session in sessions:
+        session.candidate_id = None
     db.delete(candidate)
     db.commit()

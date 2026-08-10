@@ -42,7 +42,7 @@ def _get_client() -> OpenAI | None:
     if _client is None:
         _client = OpenAI(
             api_key=settings.openai_api_key,
-            httpx_client=_get_http_client(),
+            http_client=_get_http_client(),
             max_retries=3,
         )
     return _client

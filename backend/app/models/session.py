@@ -15,7 +15,9 @@ class InterviewSession(Base):
     __tablename__ = "interview_sessions"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    candidate_id: Mapped[int] = mapped_column(ForeignKey("candidates.id", ondelete="CASCADE"), index=True)
+    candidate_id: Mapped[int | None] = mapped_column(
+        ForeignKey("candidates.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     job_title: Mapped[str] = mapped_column(String(255), nullable=False)
     job_description: Mapped[str | None] = mapped_column(Text, nullable=True)

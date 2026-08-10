@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { api, type Question, type InterviewSession } from "@/lib/api";
+import { api, type Candidate, type Question, type InterviewSession } from "@/lib/api";
 
 import GenerateQuestions from "./generate-questions";
 
@@ -22,12 +22,23 @@ interface Props {
 export default async function SessionDetailPage({ params }: Props) {
   const sessionId = Number(params.id);
   let session: InterviewSession | null = null;
+  let candidate: Candidate | null = null;
   let questions: Question[] = [];
   let error: string | null = null;
+  let candidateDeleted = false;
 
   try {
     session = await api.getSession(sessionId);
     questions = await api.listQuestionsForSession(sessionId);
+    try {
+      candidate = await api.getCandidate(session.candidate_id);
+    } catch (candidateError) {
+      if (candidateError instanceof Error && candidateError.message.toLowerCase().includes("not found")) {
+        candidateDeleted = true;
+      } else {
+        throw candidateError;
+      }
+    }
   } catch (e) {
     error = e instanceof Error ? e.message : "Unable to load session.";
   }
@@ -57,7 +68,13 @@ export default async function SessionDetailPage({ params }: Props) {
         </Button>
         <div className="flex-1">
           <h1 className="text-3xl font-bold tracking-tight">{session?.job_title}</h1>
-          <p className="text-muted-foreground">Candidate #{session?.candidate_id}</p>
+          <p className="text-muted-foreground">
+            {candidate
+              ? `${candidate.full_name} (${candidate.email})`
+              : candidateDeleted
+              ? `Candidate #${session?.candidate_id} — deleted`
+              : `Candidate #${session?.candidate_id}`}
+          </p>
         </div>
         <Badge variant="secondary">{session?.status.replace("_", " ")}</Badge>
       </div>
@@ -73,7 +90,11 @@ export default async function SessionDetailPage({ params }: Props) {
         </Card>
       )}
 
-      <GenerateQuestions session={session} />
+      <GenerateQuestions
+        session={session}
+        candidateSkills={candidate?.skills}
+        existingCount={questions.length}
+      />
 
       <div className="space-y-3">
         <h2 className="text-xl font-semibold">Questions ({questions.length})</h2>

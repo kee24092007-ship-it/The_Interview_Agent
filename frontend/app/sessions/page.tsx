@@ -77,7 +77,7 @@ export default async function SessionsPage() {
                   <div>
                     <CardTitle>{session.job_title}</CardTitle>
                     <CardDescription>
-                      Candidate #{session.candidate_id}
+                      {session.candidate_id ? `Candidate #${session.candidate_id}` : "Deleted candidate"}
                     </CardDescription>
                   </div>
                   <Badge variant={statusVariant[session.status] ?? "secondary"}>

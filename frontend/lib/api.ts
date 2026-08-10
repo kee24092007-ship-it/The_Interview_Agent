@@ -17,7 +17,7 @@ export interface Candidate {
 
 export interface InterviewSession {
   id: number;
-  candidate_id: number;
+  candidate_id: number | null;
   job_title: string;
   job_description: string | null;
   status: "scheduled" | "in_progress" | "completed" | "cancelled";
@@ -49,7 +49,9 @@ export interface Evaluation {
   created_at: string;
 }
 
-const API_BASE = "/api";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ??
+  (typeof window === "undefined" ? "http://localhost:8000" : "/api");
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -122,6 +124,7 @@ export const api = {
       job_description?: string | null;
       candidate_skills?: string | null;
       count?: number;
+      question_types?: string[];
     },
   ) =>
     request<Question[]>(`/sessions/${id}/questions/generate`, {

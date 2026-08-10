@@ -29,5 +29,5 @@ class Candidate(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, server_default=func.now())
 
     sessions: Mapped[list["InterviewSession"]] = relationship(  # noqa: F821
-        back_populates="candidate", cascade="all, delete-orphan"
+        back_populates="candidate"
     )
